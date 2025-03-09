@@ -13,6 +13,36 @@ screen = pygame.display.set_mode()
 screen_width, screen_height = screen.get_size()
 pygame.display.set_caption("Car Race Game")
 
+################### Add user defined path ##########################
+########## Keep drawing until mouse button is clicked ##############
+prev_x = prev_y = None
+screen.fill((255,255,255,255))
+drawing = drawing_end = False
+while (drawing_end == False):
+	for i in pygame.event.get():
+		#if i.type == pygame.MOUSEBUTTONDOWN:
+		if (pygame.mouse.get_pressed()[0]):
+			#while (drawing == False):
+			px, py  = pygame.mouse.get_pos()
+			pygame.draw.ellipse(screen, (0, 0, 0, 255), (px - 35, py - 35, 70, 70))
+			if (prev_x != None and prev_x - px != 0):
+				x_new = (px + prev_x) / 2
+				y_new = py + (x_new - px) * (prev_y - py) / (prev_x - px)
+				pygame.draw.ellipse(screen, (0, 0, 0, 255), (x_new - 35, y_new - 35, 70 + abs(prev_x - px), 70 + abs(prev_y - py)))
+			prev_x = px
+			prev_y = py
+			drawing = True
+
+		if (not pygame.mouse.get_pressed()[0]):
+			if (drawing == False):
+				pass
+			else:
+				drawing_end = True
+		pygame.display.flip()
+
+pygame.image.save(screen, "Track_new.png")
+screen.fill((255, 255, 255))
+
 #fonts
 generation_font = pygame.font.SysFont("Arial", 40)
 font = pygame.font.SysFont("Arial", 30)
@@ -164,6 +194,8 @@ class Player(Car):
 	def __init__(self, x, y, image):
 		Car.__init__(self, x, y, image)
 		self.speed = 0
+		self.fitness = 0
+		self.id = 0
 	
 	def update(self):
 		# update car position
@@ -250,7 +282,6 @@ class Track:
 
 #Main Loop
 def main():
-
 	global caravan, running, dead_caravan
 
 	neat = NEAT()
@@ -259,13 +290,14 @@ def main():
 
 	car_image = pygame.image.load("car.png")
 	car_image = pygame.transform.scale(car_image, (83, 30))
-	track_img = pygame.image.load(track_img_path)
+	track_img = pygame.image.load("Track_new.png")
 	track_img = pygame.transform.scale(track_img, (screen_width, screen_height))
 
 	# Init my cars
 	for i in range(pop_size):
 		caravan.append(Computer(90,screen_height/2,car_image))
-	# caravan.append(Player(90, screen_height/2, car_image))
+	caravan.append(Player(90, screen_height/2, car_image))
+
 
 	# create track object
 	track = Track(track_img)
@@ -307,7 +339,7 @@ def main():
 
 				print(f"\x1b[32mBEST CAR {parents[-1]}\x1b[0m")
 				print(f"\x1b[32mBest Score: {parents[-1].fitness}\x1b[0m")
-
+				
 			caravan = neat.newPopulation(parents, dead_caravan+parents)
 			dead_caravan = []
 			generation += 1
@@ -331,7 +363,7 @@ def main():
 				text_rect = text.get_rect()
 				text_rect.center = (car.x, car.y-30)
 				screen.blit(text, text_rect)
-				car.update()    
+				car.update()
 				car.draw()
 
 		# update display
